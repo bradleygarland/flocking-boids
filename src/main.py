@@ -34,6 +34,13 @@ while running:
             if event.button == 3:
                 if not game_state.mouse_button_3_down:
                     game_state.mouse_button_3_down = True
+            if event.button == 1:
+                for boid in boids:
+                    boid.selected = False
+                    distance = boid.pos.distance_to(mouse_pos)
+                    if distance < 25:
+                        boid.selected = True
+
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
                 if game_state.mouse_button_3_down:
@@ -43,14 +50,15 @@ while running:
 
     if game_state.mouse_button_3_down:
         mouse_pos = pygame.mouse.get_pos()
-        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randint(-5, 5), random.randint(-5, 5), 90))
+        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randint(-3, 3), random.randint(-3, 3), 0, 0, 0))
 
     # Loop functions
     screen.fill(WHITE)
 
-    for boid in boids:
-        boid.update()
+    for i, boid in enumerate(boids):
+        boid.update(boids)
         boid.draw_self(screen)
+        boid.draw_line_to_neighbors(screen, boids)
     pygame.display.update()
 
     clock.tick(fps)
@@ -60,7 +68,7 @@ while running:
     end_one_second_count_time = time.time() - start_one_second_count_time
     one_second_count_total += end_one_second_count_time
     if one_second_count_total >= 1:
-        print(f"{1 // end_framerate_time} fps, {len(boids)} boids")
+        print(f"{1 // end_framerate_time} fps, {len(boids)} boids, time delay: {end_framerate_time}")
         one_second_count_total = 0
 pygame.quit()
 sys.exit()
