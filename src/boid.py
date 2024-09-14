@@ -4,17 +4,17 @@ import pygame, math
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-SEPARATION_RADIUS = 75
+SEPARATION_RADIUS = 50
 SEPARATION_FORCE = 0.3
 COHESION_RADIUS = 150
-COHESION_FORCE = 0.0005
+COHESION_FORCE = 0.005
 ALIGNMENT_RADIUS = 100
 ALIGNMENT_FORCE = 0.05
 MAX_SPEED = 3
 
 # Load Boid image
 image_size = 25
-boid_image = pygame.transform.scale(pygame.image.load('resources/boid_arrow.png'), (image_size, image_size))
+boid_image = pygame.transform.scale(pygame.image.load('../resources/boid_arrow.png'), (image_size, image_size))
 
 class Boid:
     def __init__(self, x_pos, y_pos, x_velocity, y_velocity, x_acceleration, y_acceleration, rotation):
@@ -25,17 +25,7 @@ class Boid:
         self.selected = False
 
     def update(self, boids):
-        # Apply separation
-        separation_force = self.separation(boids)
-        self.acceleration += separation_force
-
-        # Apply Cohesion
-        cohesion_force = self.cohesion(boids)
-        self.acceleration += cohesion_force
-
-        # Apply Alignment
-        alignment_force = self.alignment(boids)
-        self.acceleration += alignment_force
+        self.behavior(boids)
 
         # Velocity change
         self.velocity += self.acceleration
@@ -62,51 +52,49 @@ class Boid:
         # Rotation change
         self.rotation = math.degrees(math.atan2(self.velocity.y, self.velocity.x)) - 90
 
-    def separation(self, boids):
+    def behavior(self, boids):
         repulsion_force = pygame.Vector2(0, 0)
+        center_of_mass = pygame.Vector2(0, 0)
+        cohesion_total = 0
+        avg_velocity = pygame.Vector2(0, 0)
+        alignment_total = 0
         for other_boid in boids:
             if other_boid != self:
                 distance = self.pos.distance_to(other_boid.pos)
+                # Separation
                 if SEPARATION_RADIUS > distance > 0:
                     away_vector = self.pos - other_boid.pos
                     away_vector = away_vector.normalize() / distance
                     repulsion_force += away_vector
-
-        repulsion_force *= SEPARATION_FORCE
-        return repulsion_force
-
-    def cohesion(self, boids):
-        center_of_mass = pygame.Vector2(0, 0)
-        total = 0
-
-        for other_boid in boids:
-            if other_boid != self:
-                distance = self.pos.distance_to(other_boid.pos)
+                # Cohesion
                 if COHESION_RADIUS > distance > 0:
                     center_of_mass += other_boid.pos
-                    total += 1
+                    cohesion_total += 1
+                # Alignment
+                if ALIGNMENT_RADIUS > distance > 0:
+                    avg_velocity += other_boid.velocity
+                    alignment_total += 1
 
-        if total > 0:
-            center_of_mass /= total
+        cohesion_force = self.cohesion(center_of_mass, cohesion_total)
+        alignment_force = self.alignment(avg_velocity, alignment_total)
+
+
+        self.acceleration += repulsion_force
+        self.acceleration += cohesion_force
+        self.acceleration += alignment_force
+
+    def cohesion(self, center_of_mass, cohesion_total):
+        if cohesion_total > 0:
+            center_of_mass /= cohesion_total
             cohesion_vector = center_of_mass - self.pos
             cohesion_vector *= COHESION_FORCE
             return cohesion_vector
         else:
             return pygame.Vector2(0, 0)
 
-    def alignment(self, boids):
-        avg_velocity = pygame.Vector2(0, 0)
-        total = 0
-
-        for other_boid in boids:
-            if other_boid != self:
-                distance = self.pos.distance_to(other_boid.pos)
-                if distance < ALIGNMENT_RADIUS:
-                    avg_velocity += other_boid.velocity
-                    total += 1
-
-        if total > 0:
-            avg_velocity /= total
+    def alignment(self, avg_velocity, alignment_total):
+        if alignment_total > 0:
+            avg_velocity /= alignment_total
             alignment_vector = avg_velocity - self.velocity
             alignment_vector *= ALIGNMENT_FORCE
             return alignment_vector
