@@ -1,10 +1,17 @@
-import pygame, sys, random, time
+from fileinput import close
+
+import pygame, sys, random, time, json
 from src.boid import Boid
 from src.game_state import GameState
+from src.utils import create_grid
+
+f = open('config.json')
+config = json.load(f)
 
 # Constants
-WIDTH, HEIGHT = 800, 800
+WIDTH, HEIGHT = config['window']['width'], config['window']['height']
 WHITE, BLACK = (255, 255, 255), (0, 0, 0)
+GRID_SIZE = config['optimization']['grid_size']
 
 pygame.init()
 
@@ -12,17 +19,22 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 # Clock and Framerate
 clock = pygame.time.Clock()
-fps = 60
+fps = config['optimization']['max_fps']
+
+close()
 
 game_state = GameState()
 boids = []
 
-one_second_count_total = 0
+dt_total = 0
 
 # Main Loop
 running = True
 
 while running:
+    dt = clock.tick(fps) / 1000
+    dt_total += dt
+
     # Performance Timer Start
     start_framerate_time = time.time()
     start_one_second_count_time = time.time()
@@ -34,12 +46,6 @@ while running:
             if event.button == 3:
                 if not game_state.mouse_button_3_down:
                     game_state.mouse_button_3_down = True
-            if event.button == 1:
-                for boid in boids:
-                    boid.selected = False
-                    distance = boid.pos.distance_to(mouse_pos)
-                    if distance < 25:
-                        boid.selected = True
 
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
@@ -50,25 +56,27 @@ while running:
 
     if game_state.mouse_button_3_down:
         mouse_pos = pygame.mouse.get_pos()
-        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randint(-3, 3), random.randint(-3, 3), 0, 0, 0))
+        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randrange(-150, 150, 50), random.randrange(-150, 150, 50), 0, 0, 0))
+
+    # Create a grid
+    grid, grid_width, grid_height = create_grid(WIDTH, HEIGHT, GRID_SIZE)
+
+    for boid in boids:
+        grid_x = int(boid.pos.x // GRID_SIZE) - 1
+        grid_y = int(boid.pos.y // GRID_SIZE) - 1
+        grid[grid_x][grid_y].append(boid)
 
     # Loop functions
     screen.fill(WHITE)
 
     for i, boid in enumerate(boids):
-        boid.update(boids)
+        boid.update(boids, grid, grid_width, grid_height, dt)
         boid.draw_self(screen)
-        boid.draw_line_to_neighbors(screen, boids)
     pygame.display.update()
 
-    clock.tick(fps)
-
     # Performance Timer End
-    end_framerate_time = time.time() - start_framerate_time
-    end_one_second_count_time = time.time() - start_one_second_count_time
-    one_second_count_total += end_one_second_count_time
-    if one_second_count_total >= 1:
-        print(f"{1 // end_framerate_time} fps, {len(boids)} boids, time delay: {end_framerate_time}")
-        one_second_count_total = 0
+    if dt_total >= 1:
+        print(f"{1 // dt} fps, {len(boids)} boids, time delay: {dt * 1000}")
+        dt_total = 0
 pygame.quit()
 sys.exit()
