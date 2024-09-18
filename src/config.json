@@ -1,8 +1,14 @@
 {
   "window": {
-    "width": 800,
-    "height": 800,
+    "width": 1000,
+    "height": 1000,
     "image_size": 25
+  },
+  "side_bar": {
+    "width": 200,
+    "height": 800,
+    "max_button_height": 100,
+    "max_button_width": 200
   },
   "physics": {
       "max_speed": 150
@@ -12,10 +18,10 @@
       "separation_force": 10,
 
       "cohesion_radius": 125,
-      "cohesion_force": 20,
+      "cohesion_force": 10,
 
       "alignment_radius": 20,
-      "alignment_force": 0.05
+      "alignment_force": 0.1
     },
   "optimization": {
       "max_fps": 60,
