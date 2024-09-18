@@ -1,4 +1,4 @@
-import pygame, json
+import pygame, json, math
 
 pygame.init()
 
@@ -47,16 +47,17 @@ class SideBar:
                     item.update(mouse_pos)
         if event.type == pygame.MOUSEBUTTONUP:
             for item in self.items:
-
                 if item.selected:
                     if item.is_selected(mouse_pos):
                         item.selected = False
                         item.update(mouse_pos)
                         if item.interaction_type == 'button':
-                            return item.action
+                            return item.action, item.value
+                    if item.interaction_type == 'slider':
+                        return item.action, item.value
                     item.selected = False
                     item.update(mouse_pos)
-        return None
+        return None, None
 
 
 
@@ -79,6 +80,7 @@ class Button:
         self.button_type = button_type
         self.text = text
         self.action = action
+        self.value = 1
 
     def draw_self(self, screen):
         pygame.draw.rect(screen, BLACK, (self.x_pos, self.y_pos, self.width, self.height))
@@ -102,42 +104,70 @@ class Button:
             self.color = self.unselected_color
 
 class Slider:
-    def __init__(self, y_index, width, selector_radius, value_min, value_max, value):
+    def __init__(self, y_index, width, selector_radius, value_min, value_max, value, text, action=None):
         self.interaction_type = 'slider'
         self.y_index = y_index
         self.width = width
         self.bar_thickness = 4
         self.selector_radius = selector_radius
+        self.unselected_radius = selector_radius
+        self.selected_radius = selector_radius + 2
+        self.selector_color = BLACK
         self.start_x_pos = (WIDTH - 200) + (MAX_BUTTON_WIDTH - self.width) / 2
         self.start_y_pos = (self.y_index * MAX_BUTTON_HEIGHT) + MAX_BUTTON_HEIGHT / 2
         self.end_x_pos = self.start_x_pos + self.width
         self.end_y_pos = self.start_y_pos
         self.click_tolerance = 10
         self.selected = False
-        self.selector_x_pos = self.start_x_pos + (self.width // 2)
         self.value_min = value_min
         self.value_max = value_max
         self.value = value
+        if self.value_min <= self.value <= self.value_max:
+            self.selector_x_pos = self.start_x_pos + self.width * ((self.value - self.value_min) / (self.value_max - self.value_min))
+            print(f'start_x: {self.start_x_pos}, selector: {self.selector_x_pos - self.start_x_pos}')
+        elif self.value < self.value_min:
+            self.selector_x_pos = self.start_x_pos
+        elif self.value > self.value_max:
+            self.selector_x_pos = self.end_x_pos
+        self.text = text
+        self.action = action
 
     def is_selected(self, mouse_pos):
         if self.start_x_pos <= mouse_pos[0] <= self.end_x_pos and self.start_y_pos - self.click_tolerance <= mouse_pos[1] <= self.end_y_pos + self.click_tolerance:
             self.selected = True
-            print("slider clicked")
             return True
         return False
 
     def draw_self(self, screen):
         pygame.draw.line(screen, BLACK,(self.start_x_pos, self.start_y_pos), (self.end_x_pos, self.end_y_pos), self.bar_thickness)
-        pygame.draw.circle(screen, BLACK, (self.selector_x_pos, self.start_y_pos), self.selector_radius)
+        pygame.draw.circle(screen, self.selector_color, (self.selector_x_pos, self.start_y_pos), self.selector_radius)
+
+        label_text_surface = font.render(self.text, True, BLACK)
+        label_text_rect = label_text_surface.get_rect(center=(self.start_x_pos + self.width // 2, self.start_y_pos - MAX_BUTTON_HEIGHT / 4))
+        screen.blit(label_text_surface, label_text_rect)
+
+        rounded_value = math.ceil(self.value * 100) / 100
+        value_text_surface = font.render(str(rounded_value), True, BLACK)
+        value_text_rect = value_text_surface.get_rect(center=(self.selector_x_pos, self.start_y_pos + MAX_BUTTON_HEIGHT / 4))
+        screen.blit(value_text_surface, value_text_rect)
+
 
     def update(self, mouse_pos):
         if self.selected:
+            value_step = (self.value_max - self.value_min) / self.width
+            self.value = self.value_min + (self.selector_x_pos - self.start_x_pos) * value_step
+
             if self.start_x_pos <= mouse_pos[0] <= self.end_x_pos:
                 self.selector_x_pos = mouse_pos[0]
             elif mouse_pos[0] < self.start_x_pos:
                 self.selector_x_pos = self.start_x_pos
             elif mouse_pos[0] > self.end_x_pos:
                 self.selector_x_pos = self.end_x_pos
+            self.selector_radius = self.selected_radius
+            self.selector_color = (50, 50, 50)
+        else:
+            self.selector_radius = self.unselected_radius
+            self.selector_color = (0, 0, 0)
 
 
 

@@ -13,7 +13,7 @@ class GameState:
         self.num_leaders_select = 1
         self.num_leaders_present = 0
 
-    def choose_leaders(self, boids):
+    def choose_leaders(self, boids, value=None):
         selected_boids = []
 
 
@@ -29,3 +29,40 @@ class GameState:
                 self.num_leaders_present += 1
                 if boid_type_index >= self.num_types_leaders:
                     boid_type_index = 0
+
+    def change_separation_force(self, boids, value):
+        for boid in boids:
+            boid.separation_force = value
+
+
+    def change_separation_radius(self, boids, value):
+        for boid in boids:
+            boid.separation_radius = value
+
+    def change_cohesion_force(self, boids, value):
+        for boid in boids:
+            boid.cohesion_force = value
+
+    def change_cohesion_radius(self, boids, value):
+        for boid in boids:
+            boid.cohesion_radius = value
+
+    def change_alignment_force(self, boids, value):
+        for boid in boids:
+            boid.alignment_force = value
+
+    def change_alignment_radius(self, boids, value):
+        for boid in boids:
+            boid.alignment_radius = value
+
+    def change_max_speed(self, boids, value):
+        for boid in boids:
+            boid.max_speed = value
+
+
+
+
+
+
+
+

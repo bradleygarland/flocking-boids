@@ -39,6 +39,13 @@ class Boid:
         self.rotation = rotation
         self.selected = False
         self.image = 'boid'
+        self.separation_force = SEPARATION_FORCE
+        self.separation_radius = SEPARATION_RADIUS
+        self.cohesion_force = COHESION_FORCE
+        self.cohesion_radius = COHESION_RADIUS
+        self.alignment_force = ALIGNMENT_FORCE
+        self.alignment_radius = ALIGNMENT_RADIUS
+        self.max_speed = MAX_SPEED
 
     def update(self, grid, grid_width, grid_height, dt):
 
@@ -49,8 +56,8 @@ class Boid:
         self.velocity += self.acceleration * dt
 
         # Limit the speed of the arrow
-        if self.velocity.length() > MAX_SPEED:
-            self.velocity.scale_to_length(MAX_SPEED)
+        if self.velocity.length() > self.max_speed:
+            self.velocity.scale_to_length(self.max_speed)
 
         # Position change
         self.pos.x += self.velocity.x * dt
@@ -83,19 +90,20 @@ class Boid:
             if other_boid != self:
                 distance = self.pos.distance_to(other_boid.pos)
                 # Separation
-                if SEPARATION_RADIUS > distance > 0:
+                if self.separation_radius > distance > 0:
                     away_vector = self.pos - other_boid.pos
                     away_vector = away_vector.normalize() / distance
                     repulsion_force += away_vector
                 # Cohesion
-                if COHESION_RADIUS > distance > 0:
+                if self.cohesion_radius > distance > 0:
                     center_of_mass += other_boid.pos
                     cohesion_total += 1
                 # Alignment
-                if ALIGNMENT_RADIUS > distance > 0:
+                if self.alignment_radius > distance > 0:
                     avg_velocity += other_boid.velocity
                     alignment_total += 1
 
+        repulsion_force *= self.separation_force
         cohesion_force = self.cohesion(center_of_mass, cohesion_total)
         alignment_force = self.alignment(avg_velocity, alignment_total)
 
@@ -108,7 +116,7 @@ class Boid:
         if cohesion_total > 0:
             center_of_mass /= cohesion_total
             cohesion_vector = center_of_mass - self.pos
-            cohesion_vector *= COHESION_FORCE
+            cohesion_vector *= self.cohesion_force
             return cohesion_vector
         else:
             return pygame.Vector2(0, 0)
@@ -117,7 +125,7 @@ class Boid:
         if alignment_total > 0:
             avg_velocity /= alignment_total
             alignment_vector = avg_velocity - self.velocity
-            alignment_vector *= ALIGNMENT_FORCE
+            alignment_vector *= self.alignment_force
             return alignment_vector
         else:
             return pygame.Vector2(0, 0)

@@ -18,10 +18,10 @@
       "separation_force": 10,
 
       "cohesion_radius": 125,
-      "cohesion_force": 20,
+      "cohesion_force": 10,
 
       "alignment_radius": 20,
-      "alignment_force": 0.05
+      "alignment_force": 0.1
     },
   "optimization": {
       "max_fps": 60,

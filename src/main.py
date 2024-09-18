@@ -6,7 +6,7 @@ from src.game_state import GameState
 from src.utils import create_grid
 from gui import SideBar, Button, Slider
 
-f = open('config.json')
+f = open('../src/config.json')
 config = json.load(f)
 
 # Constants
@@ -22,15 +22,20 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 fps = config['optimization']['max_fps']
 
-close()
-
 game_state = GameState()
 
 side_bar_items = [
-    Button(0, 150, 50, WHITE, 2, 'Press Here', 'push', game_state.choose_leaders),
-    Slider(1, 150, 10, 1, 10, 5)
+    Button(0, 150, 50, WHITE, 2, 'Choose Leaders', 'push', game_state.choose_leaders),
+    Slider(1, 150, 10, 1, 10, config['behavior']['separation_force'], "Separation Force", game_state.change_separation_force),
+    Slider(2, 150, 10, 20, 150, config['behavior']['separation_radius'], "Separation Radius", game_state.change_separation_radius),
+    Slider(3, 150, 10, 0.005, 2, config['behavior']['cohesion_force'], "Cohesion Force", game_state.change_cohesion_force),
+    Slider(4, 150, 10, 20, 150, config['behavior']['cohesion_radius'], "Cohesion Radius", game_state.change_cohesion_radius),
+    Slider(5, 150, 10, 0.005, 2, config['behavior']['alignment_force'], "Alignment Force", game_state.change_alignment_force),
+    Slider(6, 150, 10, 20, 150, config['behavior']['alignment_radius'], "Alignment Radius", game_state.change_alignment_radius),
+    Slider(7, 150, 10, 20, 500, config['physics']['max_speed'], "Max Speed", game_state.change_max_speed)
 ]
 
+close()
 
 side_bar = SideBar(200, HEIGHT, side_bar_items)
 boids = []
@@ -59,7 +64,7 @@ while running:
                 if not game_state.mouse_button_3_down:
                     game_state.mouse_button_3_down = True
             if event.button == 1:
-                side_bar.handle_item_interaction(event, mouse_pos)
+                action, value = side_bar.handle_item_interaction(event, mouse_pos)
 
 
 
@@ -68,9 +73,9 @@ while running:
                 if game_state.mouse_button_3_down:
                     game_state.mouse_button_3_down = False
             if event.button == 1:
-                action = side_bar.handle_item_interaction(event, mouse_pos)
+                action, value = side_bar.handle_item_interaction(event, mouse_pos)
                 if action:
-                    action(boids)
+                    action(boids, value)
         if event.type == pygame.QUIT:
             running = False
 
