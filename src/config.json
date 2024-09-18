@@ -1,8 +1,14 @@
 {
   "window": {
-    "width": 800,
-    "height": 800,
+    "width": 1000,
+    "height": 1000,
     "image_size": 25
+  },
+  "side_bar": {
+    "width": 200,
+    "height": 800,
+    "max_button_height": 100,
+    "max_button_width": 200
   },
   "physics": {
       "max_speed": 150
