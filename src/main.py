@@ -80,7 +80,8 @@ while running:
             running = False
 
     if game_state.mouse_button_3_down:
-        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randrange(-150, 150, 50), random.randrange(-150, 150, 50), 0, 0, 0))
+        boids.append(Boid(mouse_pos[0], mouse_pos[1], random.randrange(-150, 150, 50), random.randrange(-150, 150, 50), 0, 0, 0, screen))
+
 
     # Create a grid
     grid, grid_width, grid_height = create_grid(WIDTH, HEIGHT, GRID_SIZE)

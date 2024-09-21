@@ -11,17 +11,17 @@
     "max_button_width": 200
   },
   "physics": {
-      "max_speed": 150
+      "max_speed": 100
     },
   "behavior": {
       "separation_radius": 50,
-      "separation_force": 10,
+      "separation_force": 100,
 
-      "cohesion_radius": 125,
-      "cohesion_force": 10,
+      "cohesion_radius": 150,
+      "cohesion_force": 0.5,
 
-      "alignment_radius": 20,
-      "alignment_force": 0.1
+      "alignment_radius": 50,
+      "alignment_force": 0
     },
   "optimization": {
       "max_fps": 60,

@@ -1,4 +1,4 @@
-import pygame, math, json
+import pygame, math, json, random
 
 f = open('config.json')
 config = json.load(f)
@@ -6,6 +6,8 @@ config = json.load(f)
 # Constants
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+PURPLE = (128, 0, 128)
 
 # Config <- config.json
 SEPARATION_RADIUS = config['behavior']['separation_radius']
@@ -32,7 +34,7 @@ images = {
 
 
 class Boid:
-    def __init__(self, x_pos, y_pos, x_velocity, y_velocity, x_acceleration, y_acceleration, rotation):
+    def __init__(self, x_pos, y_pos, x_velocity, y_velocity, x_acceleration, y_acceleration, rotation, screen):
         self.pos = pygame.Vector2(x_pos - image_size / 2, y_pos - image_size / 2)
         self.velocity = pygame.Vector2(x_velocity, y_velocity)
         self.acceleration = pygame.Vector2(x_acceleration, y_acceleration)
@@ -46,22 +48,33 @@ class Boid:
         self.alignment_force = ALIGNMENT_FORCE
         self.alignment_radius = ALIGNMENT_RADIUS
         self.max_speed = MAX_SPEED
+        self.screen = screen
 
     def update(self, grid, grid_width, grid_height, dt):
+        # Limit the speed of the arrow
+        if self.velocity.length() > self.max_speed:
+            self.velocity.scale_to_length(self.max_speed)
+            self.acceleration = pygame.Vector2(0, 0)
 
         neighbors = self.get_neighbors(grid, grid_width, grid_height)
+
+        # Random Turning
+        self.acceleration += self.random_turn()
+
         self.behavior(neighbors, dt)
 
         # Velocity change
         self.velocity += self.acceleration * dt
 
-        # Limit the speed of the arrow
-        if self.velocity.length() > self.max_speed:
-            self.velocity.scale_to_length(self.max_speed)
+
+
+
 
         # Position change
         self.pos.x += self.velocity.x * dt
         self.pos.y -= self.velocity.y * dt
+
+
 
         if self.pos.x < 0:
             self.pos.x = SIMULATION_WIDTH
@@ -91,9 +104,10 @@ class Boid:
                 distance = self.pos.distance_to(other_boid.pos)
                 # Separation
                 if self.separation_radius > distance > 0:
-                    away_vector = self.pos - other_boid.pos
+                    away_vector = other_boid.pos - self.pos
                     away_vector = away_vector.normalize() / distance
-                    repulsion_force += away_vector
+                    repulsion_force -= away_vector
+
                 # Cohesion
                 if self.cohesion_radius > distance > 0:
                     center_of_mass += other_boid.pos
@@ -103,18 +117,22 @@ class Boid:
                     avg_velocity += other_boid.velocity
                     alignment_total += 1
 
+
         repulsion_force *= self.separation_force
         cohesion_force = self.cohesion(center_of_mass, cohesion_total)
         alignment_force = self.alignment(avg_velocity, alignment_total)
 
+        self.acceleration.x += (repulsion_force.x + cohesion_force.x + alignment_force.x) * dt
+        self.acceleration.y += (repulsion_force.y + cohesion_force.y + alignment_force.y) * dt
 
-        self.acceleration += repulsion_force * dt
-        self.acceleration += cohesion_force * dt
-        self.acceleration += alignment_force * dt
+        pygame.draw.line(self.screen, PURPLE, (self.pos.x + image_size / 2, self.pos.y + image_size / 2), (self.pos.x + repulsion_force.x, self.pos.y - repulsion_force.y))
+        pygame.draw.line(self.screen, GREEN, (self.pos.x + image_size / 2, self.pos.y + image_size / 2), (self.pos.x + self.velocity.x, self.pos.y - self.velocity.y) + self.acceleration * 3)
+        pygame.draw.line(self.screen, BLUE, (self.pos.x + image_size / 2, self.pos.y + image_size / 2), (self.pos.x + self.velocity.x, self.pos.y - self.velocity.y))
 
     def cohesion(self, center_of_mass, cohesion_total):
         if cohesion_total > 0:
             center_of_mass /= cohesion_total
+            pygame.draw.line(self.screen, RED, (self.pos.x + image_size / 2, self.pos.y + image_size / 2), center_of_mass)
             cohesion_vector = center_of_mass - self.pos
             cohesion_vector *= self.cohesion_force
             return cohesion_vector
@@ -129,6 +147,14 @@ class Boid:
             return alignment_vector
         else:
             return pygame.Vector2(0, 0)
+
+    def random_turn(self):
+        random_force = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+
+        if random_force.length() > 0:
+            random_force.scale_to_length(0.2)
+
+        return random_force
 
     def draw_self(self, screen):
 
